@@ -37,6 +37,9 @@ type Hashlookup struct {
 	CaseBlockHttpBody          bool
 	ExceptionPage              string
 	IcapHeaders                textproto.MIMEHeader
+	ID                         int
+	Hash                       string
+	Date                       time.Time
 }
 
 func InitHashlookupConfig(serviceName string) {

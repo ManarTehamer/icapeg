@@ -10,11 +10,14 @@ import (
 	utils "icapeg/consts"
 	"icapeg/logging"
 	"io"
+	"log"
 	"net/http"
 	"net/textproto"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/go-memdb"
 )
 
 // Processing is a func used for to processing the http message
@@ -231,13 +234,49 @@ func (h *Hashlookup) sendFileToScan(f *bytes.Buffer) (bool, error) {
 	var data map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	y, err := (fmt.Sprint(data["KnownMalicious"])), nil
+
+	date := time.Now()
+
+	schema := &memdb.DBSchema{
+		Tables: map[string]*memdb.TableSchema{
+			"Hashlookup": &memdb.TableSchema{
+				Name: "Hashlookup",
+				Indexes: map[string]*memdb.IndexSchema{
+					"id": &memdb.IndexSchema{
+						Name:    "id",
+						Unique:  true,
+						Indexer: &memdb.IntFieldIndex{Field: "ID"},
+					},
+				},
+			},
+		},
+	}
+	fmt.Println("iiiii")
+	db, err := memdb.NewMemDB(schema)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Hash value for ID 1: %s\n", fileHash)
+	fmt.Printf("date is %s", date.Format(time.RFC3339))
+
+	txn := db.Txn(true)
+	defer txn.Abort()
+	var id int
+	err = txn.Insert("Hashlookup", &Hashlookup{ID: id, Hash: fileHash})
+	if err != nil {
+	}
+
+	txn.Commit()
+
+	fmt.Printf("Saving hash to %s:\n :", fileHash)
+
 	if len(y) > 0 && y != "<nil>" {
 		return true, nil
 	} else {
 		return false, nil
 
 	}
-
 }
 
 func (e *Hashlookup) ISTagValue() string {
